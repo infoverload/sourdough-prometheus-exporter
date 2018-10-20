@@ -75,6 +75,6 @@ func main() {
 		Handler: mux,
 	}
 
-	log.Print("Starting server...")
+	log.Printf("Starting server listening on %s...", addr)
 	log.Fatal(s.ListenAndServe())
 }
