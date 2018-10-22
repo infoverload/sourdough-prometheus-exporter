@@ -61,10 +61,21 @@ func main() {
 	collector := &collector{sensorDriver: bme280}
 	registry.MustRegister(collector)
 
+	port := ":8080"
 	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(
+			`<html>
+			<head><title>BME280 Node Exporter for Sourdough Monitoring</title></head>
+			<body>
+			<h1>BME280 Node Exporter for Sourdough Monitoring</h1>
+			<p>To see metrics, go to the following endpoint: /metrics </p>
+			</body>
+			</html>`))
+	})
 
-	//log.Infoln("Listening on", *listenAddress)
-	err = http.ListenAndServe(":8080", nil)
+	log.Printf("Listening on port %s", port)
+	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
