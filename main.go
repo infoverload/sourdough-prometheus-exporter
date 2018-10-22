@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,30 +20,30 @@ type collector struct {
 	sensorDriver *i2c.BME280Driver
 }
 
-// implement the Describe method to satisfy Collector interface in client_golang/prometheus/collector.go
+// implement Describe method to satisfy Collector interface in client_golang/prometheus/collector.go
 func (c collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- temperatureDesc
 	ch <- pressureDesc
 	ch <- humidityDesc
 }
 
-// implement the Collect method to satisfy Collector interface in client_golang/prometheus/collector.go
+// implement Collect method to satisfy Collector interface in client_golang/prometheus/collector.go
 func (c collector) Collect(ch chan<- prometheus.Metric) {
 	temperature, err := c.sensorDriver.Temperature()
 	if err != nil {
-		log.Printf("error getting temperature: %s", err)
+		log.Printf("Error getting temperature: %s", err)
 	}
 	ch <- prometheus.MustNewConstMetric(temperatureDesc, prometheus.GaugeValue, float64(temperature))
 
 	pressure, err := c.sensorDriver.Pressure()
 	if err != nil {
-		log.Printf("error getting pressure: %s", err)
+		log.Printf("Error getting pressure: %s", err)
 	}
 	ch <- prometheus.MustNewConstMetric(pressureDesc, prometheus.GaugeValue, float64(pressure)/100)
 
 	humidity, err := c.sensorDriver.Humidity()
 	if err != nil {
-		log.Printf("error getting humidity: %s", err)
+		log.Printf("Error getting humidity: %s", err)
 	}
 	ch <- prometheus.MustNewConstMetric(humidityDesc, prometheus.GaugeValue, float64(humidity))
 }
@@ -54,27 +53,28 @@ func main() {
 	bme280 := i2c.NewBME280Driver(rAdaptor, i2c.WithBus(1), i2c.WithAddress(0x76))
 
 	if err := bme280.Start(); err != nil {
-		log.Fatalf("error starting driver: %s", err)
+		log.Fatalf("Error starting driver: %s", err)
 	}
-	log.Print("Connected to BME280")
+	log.Infoln("Connected to BME280! :)")
 
 	registry := prometheus.NewRegistry()
 	collector := &collector{sensorDriver: bme280}
 	registry.MustRegister(collector)
 
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	http.HandleFunc("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+			<head><title>BME280 Node Exporter</title></head>
+			<body>
+			<h1>BME280 Node Exporter</h1>
+			<p><a href="` + *metricsPath + `">Metrics</a></p>
+			</body>
+			</html>`))
+	})
 
-	addr := os.Getenv("BME280_EXPORTER_ADDRESS")
-	if addr == "" {
-		addr = "127.0.0.1:8080"
+	//log.Infoln("Listening on", *listenAddress)
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	s := &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
-
-	log.Print("Starting server...")
-	log.Fatal(s.ListenAndServe())
 }
