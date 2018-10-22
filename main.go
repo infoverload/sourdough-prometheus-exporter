@@ -55,22 +55,13 @@ func main() {
 	if err := bme280.Start(); err != nil {
 		log.Fatalf("Error starting driver: %s", err)
 	}
-	log.Infoln("Connected to BME280! :)")
+	log.Print("Connected to BME280! :)")
 
 	registry := prometheus.NewRegistry()
 	collector := &collector{sensorDriver: bme280}
 	registry.MustRegister(collector)
 
-	http.HandleFunc("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-			<head><title>BME280 Node Exporter</title></head>
-			<body>
-			<h1>BME280 Node Exporter</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
-			</body>
-			</html>`))
-	})
+	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	//log.Infoln("Listening on", *listenAddress)
 	err = http.ListenAndServe(":8080", nil)
