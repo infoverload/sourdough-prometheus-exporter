@@ -5,13 +5,13 @@
 
 [Unit]
 Description=Sourdough Prometheus Exporter
-After=multi-user.target
+After=network.target
 
 [Install]
 WantedBy=multi-user.target
 
 [Service]
 WorkingDirectory=/home/pi/go/src/github.com/sourdough-prometheus-exporter
-ExecStart=/home/pi/go/src/github.com/sourdough-prometheus-exporter/main.go
+ExecStart=/home/pi/go/src/github.com/sourdough-prometheus-exporter/sourdough-prometheus-exporter
 User=pi
 Restart=always
