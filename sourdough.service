@@ -1,0 +1,17 @@
+# This is to be used on a Raspberry Pi, where the code is checked out in:
+# /home/pi/go/src/github.com/sourdough-prometheus-exporter. 
+# To install the unit:
+# systemctl enable $PWD/sourdough.service
+
+[Unit]
+Description=Sourdough Prometheus Exporter
+After=multi-user.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+WorkingDirectory=/home/pi/go/src/github.com/sourdough-prometheus-exporter
+ExecStart=/home/pi/go/src/github.com/sourdough-prometheus-exporter/main.go
+User=pi
+Restart=always
