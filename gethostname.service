@@ -1,0 +1,17 @@
+# This is to be used on a Raspberry Pi, where the code is checked out in:
+# /home/pi/go/src/github.com/sourdough-prometheus-exporter. 
+# To install the unit:
+# systemctl enable $PWD/gethostname.service
+
+[Unit]
+Description=Get current hostname (IP address)
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+WorkingDirectory=/home/pi/go/src/github.com/sourdough-prometheus-exporter
+ExecStart=/home/pi/go/src/github.com/sourdough-prometheus-exporter/get-current-ip.sh
+User=pi
+Restart=always
