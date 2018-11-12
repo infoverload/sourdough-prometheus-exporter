@@ -13,9 +13,11 @@ import (
 var (
 	temperatureDesc = prometheus.NewDesc("bme280_temperature_celsius", "Temperature in celsius degree", nil, nil)
 	pressureDesc    = prometheus.NewDesc("bme280_pressure_hpa", "Barometric pressure in hPa", nil, nil)
-	humidityDesc    = prometheus.NewDesc("bme280_humidity", "Humidity in percentage of relative humidity", nil, nil)
+	humidityDesc    = prometheus.NewDesc("bme280_humidity_percentage", "Humidity in percentage of relative humidity", nil, nil)
 )
 
+// make a collector type
+// a collector is a prometheus.Collector for a service
 type collector struct {
 	sensorDriver *i2c.BME280Driver
 }
@@ -31,19 +33,22 @@ func (c collector) Describe(ch chan<- *prometheus.Desc) {
 func (c collector) Collect(ch chan<- prometheus.Metric) {
 	temperature, err := c.sensorDriver.Temperature()
 	if err != nil {
-		log.Printf("Error getting temperature: %s", err)
+		ch <- prometheus.NewInvalidMetric(temperatureDesc, err)
+		return
 	}
 	ch <- prometheus.MustNewConstMetric(temperatureDesc, prometheus.GaugeValue, float64(temperature))
 
 	pressure, err := c.sensorDriver.Pressure()
 	if err != nil {
-		log.Printf("Error getting pressure: %s", err)
+		ch <- prometheus.NewInvalidMetric(pressureDesc, err)
+		return
 	}
 	ch <- prometheus.MustNewConstMetric(pressureDesc, prometheus.GaugeValue, float64(pressure)/100)
 
 	humidity, err := c.sensorDriver.Humidity()
 	if err != nil {
-		log.Printf("Error getting humidity: %s", err)
+		ch <- prometheus.NewInvalidMetric(humidityDesc, err)
+		return
 	}
 	ch <- prometheus.MustNewConstMetric(humidityDesc, prometheus.GaugeValue, float64(humidity))
 }
@@ -59,10 +64,11 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 	collector := &collector{sensorDriver: bme280}
+	// make Prometheus client aware of our collector
 	registry.MustRegister(collector)
 
-	port := ":8080"
-	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	// set up HTTP handler for metrics and root endpoints
+	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(
 			`<html>
@@ -74,9 +80,9 @@ func main() {
 			</html>`))
 	})
 
+	// start listening for HTTP connections
+	port := ":8080"
 	log.Printf("Listening on port %s", port)
-	err := http.ListenAndServe(port, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(http.ListenAndServe(port, nil))
+
 }
