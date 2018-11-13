@@ -1,11 +1,11 @@
 # Sourdough Prometheus Exporter
 
-This is a simple Prometheus exporter written in Go for the Bosch BME280 Sensor.  It is part of a personal project to monitor the temperature and humidity of my sourdough cultures. 
+This is a simple Prometheus exporter written in Go for the Bosch BME280 Sensor.  It is part of a personal project to monitor the temperature and humidity of my sourdough cultures. https://slides.com/daisyt/observability-kitchen
 
 The following metrics are exported:
-Temperature (celsius)
-Barometric pressure (hPa)
-Humidity (percentage of relative humidity)
+- Temperature (celsius)
+- Barometric pressure (hPa)
+- Humidity (percentage of relative humidity)
 
 
 ## Build it
